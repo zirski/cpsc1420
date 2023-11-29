@@ -154,7 +154,8 @@ void SellPart(Part array[], int num_parts, double &bank_balance) {
   // in that list so you can't see the problem there.)
   char part_name[10];
   char part_manufacturer[11];
-  int part_indices[2];
+  const int PART_INDICES_SIZE = 2;
+  int part_indices[PART_INDICES_SIZE];
   while (true) {
     if (!(cin >> part_name)) {
       cin.clear();
@@ -185,8 +186,10 @@ void SellPart(Part array[], int num_parts, double &bank_balance) {
            << "Input the part manufacturer: ";
     } else {
       bool is_found;
-      for (int index : part_indices) {
-        if (!(strcmp(part_manufacturer, array[index].manufacturer)))
+      for (int i = 0; i < PART_INDICES_SIZE; i++) {
+        // I'm using this rather clunky for loop for the sole reason that it
+        // doesn't give me a warning in the compiler :b
+        if (!(strcmp(part_manufacturer, array[part_indices[i]].manufacturer)))
           is_found = true;
       }
       if (!is_found) {
