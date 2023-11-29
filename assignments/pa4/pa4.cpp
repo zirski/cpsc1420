@@ -153,9 +153,10 @@ void SellPart(Part array[], int num_parts, double &bank_balance) {
   // I assume DisplayReorderReport, though the largest-named parts dont show up
   // in that list so you can't see the problem there.)
   char part_name[10];
-  char part_manufacturer[11];
+  char part_manu[11];
   const int PART_INDICES_SIZE = 2;
-  int part_indices[PART_INDICES_SIZE];
+  int poss_part_indices[PART_INDICES_SIZE];
+  int part_index;
   while (true) {
     if (!(cin >> part_name)) {
       cin.clear();
@@ -164,10 +165,12 @@ void SellPart(Part array[], int num_parts, double &bank_balance) {
     } else {
       bool is_found;
       int x = 0;
+      // compares inputted part name with list of parts; for every time it
+      // matches, store the index in poss_part_indices[].
       for (int i = 0; i < num_parts; i++) {
         if (!(strcmp(part_name, array[i].name))) {
           is_found = true;
-          part_indices[x++] = i;
+          poss_part_indices[x++] = i;
         }
       }
       if (!is_found) {
@@ -179,7 +182,7 @@ void SellPart(Part array[], int num_parts, double &bank_balance) {
   }
   cout << "Input the part manufacturer: ";
   while (true) {
-    if (!(cin >> part_manufacturer)) {
+    if (!(cin >> part_manu)) {
       cin.clear();
       fflush(stdin);
       cout << "Invalid part manufacturer!" << endl
@@ -189,16 +192,29 @@ void SellPart(Part array[], int num_parts, double &bank_balance) {
       for (int i = 0; i < PART_INDICES_SIZE; i++) {
         // I'm using this rather clunky for loop for the sole reason that it
         // doesn't give me a warning in the compiler :b
-        if (!(strcmp(part_manufacturer, array[part_indices[i]].manufacturer)))
-          is_found = true;
+        if (!(strcmp(part_manu, array[poss_part_indices[i]].manufacturer))) {
+          part_index = poss_part_indices[i];
+          break;
+        } else {
+          fflush(stdin);
+          cout << "Invalid part manufacturer!" << endl
+               << "Input the part manufacturer: ";
+        }
       }
-      if (!is_found) {
-        fflush(stdin);
-        cout << "Invalid part manufacturer!" << endl
-             << "Input the part manufacturer: ";
-      } else {
-        break;
-      }
+      break;
     }
+  }
+  int quantity;
+  cout << "Please input the quantity[0 - " << array[part_index].actual_quantity
+       << "]: ";
+  if ((!(cin >> quantity)) ||
+      (quantity < 1 || quantity >= array[part_index].actual_quantity)) {
+    cin.clear();
+    fflush(stdin);
+    cout << "Please input the quantity[0 - "
+         << array[part_index].actual_quantity << "]: ";
+  } else {
+    array[part_index].actual_quantity -= quantity;
+    bank_balance += quantity * array[part_index].unit_price;
   }
 }
