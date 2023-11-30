@@ -4,6 +4,7 @@
 //  Purpose:
 
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iomanip>
@@ -26,6 +27,7 @@ void DisplayInventoryReport(Part[], int, double);
 void DisplayReorderReport(Part[], int, double);
 void SellPart(Part[], int, double &);
 void OrderPart();
+int ProcessSale(Part[], int);
 
 int main() {
   ifstream in("inventory.dat");
@@ -48,6 +50,7 @@ int main() {
     case 4:
       break;
     default:
+      exit(0);
       break;
     }
   }
@@ -66,14 +69,12 @@ int DisplayMenu() {
 
   int input;
   while (true) {
-    if (!(cin >> input)) {
+    if (cin >> input && input > 0 && input < 6) {
+      return input;
+    } else {
+      cout << "Please enter a choice between 1 and 5: ";
       cin.clear();
       fflush(stdin);
-      cout << "Please enter a choice between 1 and 5: ";
-    } else if (input < 1 || input > 5) {
-      cout << "Please enter a choice between 1 and 5: ";
-    } else {
-      return input;
     }
   }
 }
@@ -146,75 +147,68 @@ void DisplayReorderReport(Part array[], int num_parts, double bank_balance) {
   cout << "Bank Balance($): " << bank_balance << endl;
 }
 
-void SellPart(Part array[], int num_parts, double &bank_balance) {
-  cout << "Input the part name: ";
-  // For some reason I need to leave one empty array element for these
-  // c-strings; otherwise it screws up the formatting in DisplayOrderReport (and
-  // I assume DisplayReorderReport, though the largest-named parts dont show up
-  // in that list so you can't see the problem there.)
-  char part_name[10];
-  char part_manu[11];
-  const int PART_INDICES_SIZE = 2;
-  int poss_part_indices[PART_INDICES_SIZE];
-  int part_index;
-  while (true) {
-    if (!(cin >> part_name)) {
-      cin.clear();
-      fflush(stdin);
-      cout << "Invalid part name!" << endl << "Input the part name: ";
-    } else {
-      bool is_found;
-      int x = 0;
-      // compares inputted part name with list of parts; for every time it
-      // matches, store the index in poss_part_indices[].
-      for (int i = 0; i < num_parts; i++) {
-        if (!(strcmp(part_name, array[i].name))) {
-          is_found = true;
-          poss_part_indices[x++] = i;
-        }
-      }
-      if (!is_found) {
-        cout << "Invalid part name!" << endl << "Input the part name: ";
-      } else {
-        break;
-      }
-    }
-  }
-  cout << "Input the part manufacturer: ";
-  while (true) {
-    if (!(cin >> part_manu)) {
-      cin.clear();
-      fflush(stdin);
-      cout << "Invalid part manufacturer!" << endl
-           << "Input the part manufacturer: ";
-    } else {
-      bool is_found;
-      for (int i = 0; i < PART_INDICES_SIZE; i++) {
-        // I'm using this rather clunky for loop for the sole reason that it
-        // doesn't give me a warning in the compiler :b
-        if (!(strcmp(part_manu, array[poss_part_indices[i]].manufacturer))) {
-          part_index = poss_part_indices[i];
-          break;
-        } else {
-          fflush(stdin);
-          cout << "Invalid part manufacturer!" << endl
-               << "Input the part manufacturer: ";
-        }
-      }
-      break;
-    }
-  }
-  int quantity;
-  cout << "Please input the quantity[0 - " << array[part_index].actual_quantity
+void SellPart(Part array[], int num_parts, double &balance) {
+  int part_i = ProcessSale(array, num_parts);
+  int quant;
+  cout << "Please input the quantity[0 - " << array[part_i].actual_quantity
        << "]: ";
-  if ((!(cin >> quantity)) ||
-      (quantity < 1 || quantity >= array[part_index].actual_quantity)) {
-    cin.clear();
-    fflush(stdin);
-    cout << "Please input the quantity[0 - "
-         << array[part_index].actual_quantity << "]: ";
-  } else {
-    array[part_index].actual_quantity -= quantity;
-    bank_balance += quantity * array[part_index].unit_price;
+  while (true) {
+    if (cin >> quant && quant > 0 && quant < array[part_i].actual_quantity) {
+      array[part_i].actual_quantity -= quant;
+      balance += quant * array[part_i].unit_price;
+      break;
+    } else {
+      cin.clear();
+      fflush(stdin);
+      cout << "Please input the quantity[0 - " << array[part_i].actual_quantity
+           << "]: ";
+    }
+  }
+}
+
+void OrderPart(Part array[], int num_parts, double &balance) {}
+
+int ProcessSale(Part array[], int num_parts) {
+  cout << "Input the part name: ";
+  char input_name[10];
+  char input_manufacturer[11];
+
+  while (true) {
+    // If cin can read the user's input into a string
+    if (cin >> input_name) {
+      // Iterate through all the parts to look for a match
+      for (int i = 0; i < num_parts; i++) {
+        // If the part name exists, prompt user for the manufacturer name
+        if (!(strcmp(input_name, array[i].name))) {
+          cout << "Input the part manufacturer: ";
+          while (true) {
+            if (cin >> input_manufacturer) {
+              // Iterate through all the parts again, this time to look for the
+              // name-manufacturer match the user wants
+              for (int j = 0; j < num_parts; j++) {
+                if (!(strcmp(input_name, array[j].name)) &&
+                    !(strcmp(input_manufacturer, array[j].manufacturer))) {
+                  return j;
+                }
+              }
+            } else {
+              cout << "Invalid part manufacturer!" << endl
+                   << "Input the part manufacturer: ";
+              cin.clear();
+              fflush(stdin);
+            }
+          }
+        }
+      }
+      // If no part was found, try again
+      cout << "Invalid part name!" << endl << "Input the part name: ";
+      fflush(stdin);
+      // If the user inputted something cin couldn't read into a char[10], then
+      // try again
+    } else {
+      cout << "Invalid part name!" << endl << "Input the part name: ";
+      cin.clear();
+      fflush(stdin);
+    }
   }
 }
