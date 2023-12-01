@@ -1,7 +1,8 @@
 // Toby Hammond
 //  pa4.cpp
 //  November 13, 2023
-//  Purpose:
+//  Purpose: Manages inventory for Mini Electronics. Users can check inventory,
+//  sell and order parts, and get a report of parts which need to be reordered.
 
 #include <cstdio>
 #include <cstdlib>
@@ -16,8 +17,8 @@ using namespace std;
 const double SELL_PRICE_OFFSET = 0.8;
 
 struct Part {
-  char name[10];
-  char manufacturer[11];
+  string name;
+  string manufacturer;
   int actual_q;
   int min_q;
   double uprice;
@@ -227,17 +228,17 @@ void OrderPart(Part array[], int num_parts, double &balance) {
       } else if (((array[i].min_q - array[i].actual_q) * lowest.min_q) ==
                  ((lowest.min_q - lowest.actual_q) * array[i].min_q)) {
         // If part names are equal, evaluate the manufacturer names for equality
-        if (!(strcmp(array[i].name, lowest.name))) {
+        if (!(array[i].name.compare(lowest.name))) {
           // It doesn't really matter if the manufacturer names are equal, since
           // the assignment description doesn't provide any course of action
           // given this case.
-          if (strcmp(array[i].manufacturer, lowest.manufacturer) == -1) {
+          if ((array[i].manufacturer.compare(lowest.manufacturer)) == -1) {
             lowest = array[i];
             part_index = i;
             ct++;
           }
         } else {
-          if (strcmp(array[i].name, lowest.name) == -1) {
+          if ((array[i].name.compare(lowest.name)) == -1) {
             lowest = array[i];
             part_index = i;
             ct++;
@@ -296,8 +297,8 @@ void OrderPart(Part array[], int num_parts, double &balance) {
 
 int ProcessQuery(Part array[], int num_parts) {
   cout << "Input the part name: ";
-  char input_name[10];
-  char input_manufacturer[11];
+  string input_name;
+  string input_manufacturer;
 
   while (true) {
     // If cin can read the user's input into a string
@@ -305,15 +306,20 @@ int ProcessQuery(Part array[], int num_parts) {
       // Iterate through all the parts to look for a match
       for (int i = 0; i < num_parts; i++) {
         // If the part name exists, prompt user for the manufacturer name
-        if (!(strcmp(input_name, array[i].name))) {
+        if (!(input_name.compare(array[i].name))) {
+          // This fflush call is very important to input validation; if the user
+          // inputs multiple tokens we need to tell the program to ignore them
+          // so they don't get read later.
+          fflush(stdin);
           cout << "Input the part manufacturer: ";
           while (true) {
             if (cin >> input_manufacturer) {
               // Iterate through all the parts again, this time to look for the
               // name-manufacturer match the user wants
               for (int j = 0; j < num_parts; j++) {
-                if (!(strcmp(input_name, array[j].name)) &&
-                    !(strcmp(input_manufacturer, array[j].manufacturer))) {
+                if (!(input_name.compare(array[i].name)) &&
+                    !(input_manufacturer.compare(array[j].manufacturer))) {
+                  fflush(stdin);
                   return j;
                 }
               }
